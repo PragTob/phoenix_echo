@@ -2,7 +2,7 @@ defmodule PhoenixEcho.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", PhoenixEcho.RoomChannel
+  channel "echo:*", PhoenixEcho.EchoChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
