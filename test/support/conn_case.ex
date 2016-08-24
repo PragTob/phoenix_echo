@@ -27,8 +27,6 @@ defmodule PhoenixEcho.ConnCase do
     end
   end
 
-  setup tags do
 
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
-  end
+  {:ok, conn: Phoenix.ConnTest.build_conn()}
 end

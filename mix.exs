@@ -31,6 +31,7 @@ defmodule PhoenixEcho.Mixfile do
     [{:phoenix, "~> 1.2.1"},
      {:phoenix_pubsub, "~> 1.0"},
      {:gettext, "~> 0.11"},
-     {:cowboy, "~> 1.0"}]
+     {:cowboy, "~> 1.0"},
+     {:websocket_client, git: "https://github.com/jeremyong/websocket_client.git", only: [:test, :dev]}]
   end
 end

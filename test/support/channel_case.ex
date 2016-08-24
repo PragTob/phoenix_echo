@@ -26,8 +26,5 @@ defmodule PhoenixEcho.ChannelCase do
     end
   end
 
-  setup tags do
-
-    :ok
-  end
+  :ok
 end
