@@ -1,4 +1,4 @@
-# PhoenixEcho
+# PhoenixEcho [![Build Status](https://travis-ci.org/PragTob/phoenix_echo.svg?branch=master)](https://travis-ci.org/PragTob/phoenix_echo)
 
 To start your Phoenix app:
 
