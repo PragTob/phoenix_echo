@@ -66,20 +66,16 @@ defmodule PhoenixEcho.ChannelsTest do
     end
 
     test "it might not reply" do
-      {:ok, socket} = socket_connect
-      WebsocketClient.join(socket, "echo:hello", %{})
-      assert_receive %Message{event: "phx_reply"}
+      socket = join(@topic)
+      send_event(socket, @topic, "no_reply")
 
-      WebsocketClient.send_event(socket, "echo:hello", "no_reply", %{})
       refute_receive %Message{}
     end
 
     test "it might broadcast as a result" do
-      {:ok, socket} = socket_connect
-      WebsocketClient.join(socket, "echo:hello", %{})
-      assert_receive %Message{event: "phx_reply"}
+      socket = join(@topic)
+      send_event(socket, @topic, "shout", %{"answer" => 42})
 
-      WebsocketClient.send_event(socket, "echo:hello", "shout", %{"answer" => 42})
       assert_receive %Message{
         event:   "shout",
         payload: %{"answer" => 42},
@@ -88,23 +84,19 @@ defmodule PhoenixEcho.ChannelsTest do
     end
 
     test "it might broadcast_from as a result" do
-      {:ok, socket} = socket_connect
-      WebsocketClient.join(socket, "echo:hello", %{})
-      assert_receive %Message{event: "phx_reply"}
+      socket = join(@topic)
+      send_event(socket, @topic, "shout_with_earplugs", %{"answer" => 42})
 
-      WebsocketClient.send_event(socket, "echo:hello", "shout_with_earplugs", %{"answer" => 42})
       refute_receive %Message{}
     end
   end
 
   describe "sending events error cases" do
     test "can't match an event" do
-      {:ok, socket} = socket_connect
-      WebsocketClient.join(socket, "echo:hello", %{})
-      assert_receive %Message{event: "phx_reply"}
+      socket = join(@topic)
 
       capture_log fn ->
-        WebsocketClient.send_event(socket, "echo:hello", "nonexistant", %{"answer" => 42})
+        send_event(socket, @topic, "nonexistant", %{"answer" => 42})
         assert_receive %Message{event: "phx_error"}
       end
     end
