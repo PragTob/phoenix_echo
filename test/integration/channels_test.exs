@@ -3,54 +3,62 @@ defmodule PhoenixEcho.ChannelsTest do
   alias Phoenix.Integration.WebsocketClient
   alias Phoenix.Socket.Message
 
+  import ExUnit.CaptureLog
+
+  @topic "echo:hello"
+  @payload %{}
+  @socket_url "ws://localhost:4001/socket/websocket"
   describe "connecting to the socket" do
     test "clients can connect" do
       assert {:ok, _socket} = socket_connect
     end
 
     test "clients can be denied connection" do
-      assert {:error, _} = socket_connect "ws://localhost:4001/socket/websocket?connect=false"
+      assert {:error, _} = socket_connect "#{@socket_url}?connect=false"
     end
   end
 
   describe "joining channels" do
     test "successfully joins channel" do
       {:ok, socket} = socket_connect
-      WebsocketClient.join(socket, "echo:hello", %{})
-      assert_joined "echo:hello"
+      join_topic(socket, @topic, %{})
+      assert_joined @topic
     end
 
     test "unauthorized join request" do
       {:ok, socket} = socket_connect
-      WebsocketClient.join(socket, "echo:hello", %{"authorized" => false})
-      assert_receive %Message{event: "phx_reply",
-                              payload: %{
-                                "status" => "error",
-                                "response" => %{
-                                  "reason" => "unauthorized"
-                                }
-                              },
-                              topic: "echo:hello"}
-    end
-
-    test "joining an non existed channel" do
-      {:ok, socket} = socket_connect
-      WebsocketClient.join(socket, "foo:bar", %{})
+      join_topic(socket, @topic, %{"authorized" => false})
       assert_receive %Message{
         event: "phx_reply",
         payload: %{
-          "status" => "error"
-        }
+          "status" => "error",
+          "response" => %{
+            "reason" => "unauthorized"
+          }
+        },
+        topic: @topic
       }
+    end
+
+    test "joining an non existed channel" do
+      capture_log fn ->
+        {:ok, socket} = socket_connect
+        join_topic(socket, "foo:bar")
+        assert_receive %Message{
+          event: "phx_reply",
+          payload: %{
+            "status" => "error"
+          }
+        }
+      end
     end
   end
 
   describe "sending events happy path" do
     test "it echoes them back on echo" do
-      {:ok, socket} = socket_connect
-      WebsocketClient.join(socket, "echo:hello", %{})
+      socket = join(@topic)
       payload = %{"foo" => "bar"}
-      WebsocketClient.send_event(socket, "echo:hello", "echo", payload)
+      send_event(socket, "echo:hello", "echo", payload)
       assert_receive %Message{
         event: "phx_reply",
         payload: %{"response" => ^payload}
@@ -95,13 +103,30 @@ defmodule PhoenixEcho.ChannelsTest do
       WebsocketClient.join(socket, "echo:hello", %{})
       assert_receive %Message{event: "phx_reply"}
 
-      WebsocketClient.send_event(socket, "echo:hello", "nonexistant", %{"answer" => 42})
-      assert_receive %Message{event: "phx_error"}
+      capture_log fn ->
+        WebsocketClient.send_event(socket, "echo:hello", "nonexistant", %{"answer" => 42})
+        assert_receive %Message{event: "phx_error"}
+      end
     end
   end
 
-  defp socket_connect(url \\ "ws://localhost:4001/socket/websocket") do
+  defp socket_connect(url \\ @socket_url) do
     WebsocketClient.start_link(self, url)
+  end
+
+  defp join_topic(socket, topic, payload \\ @payload) do
+    WebsocketClient.join(socket, topic, payload)
+  end
+
+  defp join(topic, payload \\ @payload) do
+    {:ok, socket} = socket_connect @socket_url
+    join_topic(socket, topic, payload)
+    assert_joined topic
+    socket
+  end
+
+  defp send_event(socket, topic, event, payload \\ @payload) do
+    WebsocketClient.send_event(socket, topic, event, payload)
   end
 
   defp assert_joined(expected_topic) do
