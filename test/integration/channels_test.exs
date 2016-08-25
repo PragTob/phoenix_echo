@@ -45,7 +45,7 @@ defmodule PhoenixEcho.ChannelsTest do
     end
   end
 
-  describe "sending events" do
+  describe "sending events happy path" do
     test "it echoes them back on echo" do
       {:ok, socket} = socket_connect
       WebsocketClient.join(socket, "echo:hello", %{})
@@ -63,8 +63,40 @@ defmodule PhoenixEcho.ChannelsTest do
       assert_receive %Message{event: "phx_reply"}
 
       WebsocketClient.send_event(socket, "echo:hello", "no_reply", %{})
-      refute_receive %Message{event: "phx_reply"}
-      assert :erlang.process_info(self, :messages) == {:messages, []}
+      refute_receive %Message{}
+    end
+
+    test "it might broadcast as a result" do
+      {:ok, socket} = socket_connect
+      WebsocketClient.join(socket, "echo:hello", %{})
+      assert_receive %Message{event: "phx_reply"}
+
+      WebsocketClient.send_event(socket, "echo:hello", "shout", %{"answer" => 42})
+      assert_receive %Message{
+        event:   "shout",
+        payload: %{"answer" => 42},
+        topic:   "echo:hello"
+      }
+    end
+
+    test "it might broadcast_from as a result" do
+      {:ok, socket} = socket_connect
+      WebsocketClient.join(socket, "echo:hello", %{})
+      assert_receive %Message{event: "phx_reply"}
+
+      WebsocketClient.send_event(socket, "echo:hello", "shout_with_earplugs", %{"answer" => 42})
+      refute_receive %Message{}
+    end
+  end
+
+  describe "sending events error cases" do
+    test "can't match an event" do
+      {:ok, socket} = socket_connect
+      WebsocketClient.join(socket, "echo:hello", %{})
+      assert_receive %Message{event: "phx_reply"}
+
+      WebsocketClient.send_event(socket, "echo:hello", "nonexistant", %{"answer" => 42})
+      assert_receive %Message{event: "phx_error"}
     end
   end
 

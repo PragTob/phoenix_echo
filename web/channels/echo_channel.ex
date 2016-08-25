@@ -22,6 +22,11 @@ defmodule PhoenixEcho.EchoChannel do
     {:noreply, socket}
   end
 
+  def handle_in("shout_with_earplugs", payload, socket) do
+    broadcast_from socket, "shout", payload
+    {:noreply, socket}
+  end
+
   def handle_in("no_reply", _payload, socket) do
     {:noreply, socket}
   end
