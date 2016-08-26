@@ -27,8 +27,34 @@ defmodule PhoenixEcho.EchoChannel do
     {:noreply, socket}
   end
 
+  def handle_in("push", payload, socket) do
+    push socket, "answer", payload
+    {:reply, {:ok, payload}, socket}
+  end
+
   def handle_in("no_reply", _payload, socket) do
     {:noreply, socket}
+  end
+
+  def handle_in("boom", _payload, _socket) do
+    raise "boom"
+  end
+
+  def handle_in("sleep", payload = %{"time" => time}, socket) do
+    :timer.sleep time
+    {:reply, {:ok, payload}, socket}
+  end
+
+  def handle_in("stop_normal", _, socket) do
+    {:stop, :normal, socket}
+  end
+
+  def handle_in("stop_shutdown", _, socket) do
+    {:stop, :shutdown, socket}
+  end
+
+  def handle_in("stop_any", _, socket) do
+    {:stop, :any, socket}
   end
 
   defp authorized?(%{"authorized" => false}) do

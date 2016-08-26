@@ -89,6 +89,21 @@ defmodule PhoenixEcho.ChannelsTest do
 
       refute_receive %Message{}
     end
+
+    test "it could push messages as well as reply" do
+      socket = join(@topic)
+      payload = %{"answer" => 42}
+      send_event(socket, @topic, "push", payload)
+
+      assert_receive %Message{
+        event:  "phx_reply",
+        payload: %{"response" => ^payload}
+      }
+      assert_receive %Message{
+        event:  "answer",
+        payload: ^payload
+      }
+    end
   end
 
   describe "sending events error cases" do
@@ -97,6 +112,49 @@ defmodule PhoenixEcho.ChannelsTest do
 
       capture_log fn ->
         send_event(socket, @topic, "nonexistant", %{"answer" => 42})
+        assert_receive %Message{event: "phx_error"}
+      end
+    end
+
+    test "channel crashes" do
+      socket = join @topic
+
+      capture_log fn ->
+        send_event socket, @topic, "boom"
+        assert_receive %Message{event: "phx_error"}
+      end
+    end
+
+    test "channel takes a long time to answer" do
+      socket = join @topic
+
+      sleep_ms = 200
+      send_event socket, @topic, "sleep", %{"time" => sleep_ms}
+      refute_receive %Message{}, sleep_ms
+      assert_receive %Message{event: "phx_reply"}
+    end
+  end
+
+  describe "shutting down the channel" do
+    test "stop normal" do
+      socket = join @topic
+
+      send_event socket, @topic, "stop_normal"
+      assert_receive %Message{event: "phx_close"}
+    end
+
+    test "stop shutdown" do
+      socket = join @topic
+
+      send_event socket, @topic, "stop_shutdown"
+      assert_receive %Message{event: "phx_close"}
+    end
+
+    test "stop any leads to an error" do
+      socket = join @topic
+
+      capture_log fn ->
+        send_event socket, @topic, "stop_any"
         assert_receive %Message{event: "phx_error"}
       end
     end
