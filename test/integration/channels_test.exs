@@ -36,7 +36,8 @@ defmodule PhoenixEcho.ChannelsTest do
             "reason" => "unauthorized"
           }
         },
-        topic: @topic
+        topic: @topic,
+        ref: "1"
       }
     end
 
@@ -48,7 +49,8 @@ defmodule PhoenixEcho.ChannelsTest do
           event: "phx_reply",
           payload: %{
             "status" => "error"
-          }
+          },
+          ref: "1"
         }
       end
     end
@@ -122,6 +124,21 @@ defmodule PhoenixEcho.ChannelsTest do
       capture_log fn ->
         send_event(socket, @topic, "nonexistant", %{"answer" => 42})
         assert_receive %Message{event: "phx_error"}
+      end
+    end
+
+    test "send message and then boom" do
+      socket = join @topic
+
+      send_event socket, @topic, "echo"
+      assert_receive %Message{event: "phx_reply", ref: "2"}
+
+      send_event socket, @topic, "echo"
+      assert_receive %Message{event: "phx_reply", ref: "3"}
+
+      capture_log fn ->
+        send_event socket, @topic, "boom"
+        assert_receive %Message{event: "phx_error", ref: "1"}
       end
     end
 
