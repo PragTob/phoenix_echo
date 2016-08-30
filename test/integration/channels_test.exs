@@ -92,7 +92,7 @@ defmodule PhoenixEcho.ChannelsTest do
       }
     end
 
-    test "it might broadcast_from as a result" do
+    test "it might broadcast_from as a result (sender doesn't get broadcast message)" do
       socket = join(@topic)
       send_event(socket, @topic, "shout_with_earplugs", %{"answer" => 42})
 
@@ -142,8 +142,6 @@ defmodule PhoenixEcho.ChannelsTest do
       refute_receive %Message{}, sleep_ms
       assert_receive %Message{event: "phx_reply"}
     end
-
-
   end
 
   describe "shutting down the channel" do
