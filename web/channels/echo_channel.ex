@@ -11,8 +11,11 @@ defmodule PhoenixEcho.EchoChannel do
 
   # Channels can be used in a request/response fashion
   # by sending replies to requests from the client
-  def handle_in("echo", payload, socket) do
+  def handle_in("echo", payload, socket) when is_map(payload) do
     {:reply, {:ok, payload}, socket}
+  end
+  def handle_in("echo", payload, socket) do
+    {:reply, {:ok, %{payload: payload}}, socket}
   end
 
   # It is also common to receive messages from the client and

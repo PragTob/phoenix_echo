@@ -65,6 +65,15 @@ defmodule PhoenixEcho.ChannelsTest do
       }
     end
 
+    test "echos back non JSON/map inputs" do
+      socket = join @topic
+
+      send_event socket, @topic, "echo", "fooo"
+      assert_receive %Message{
+        event: "phx_reply",
+        payload: %{"response" => %{"payload" => "fooo"}}}
+    end
+
     test "it might not reply" do
       socket = join(@topic)
       send_event(socket, @topic, "no_reply")
@@ -133,6 +142,8 @@ defmodule PhoenixEcho.ChannelsTest do
       refute_receive %Message{}, sleep_ms
       assert_receive %Message{event: "phx_reply"}
     end
+
+
   end
 
   describe "shutting down the channel" do
