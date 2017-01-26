@@ -10,7 +10,7 @@ defmodule PhoenixEcho.ChannelsTest do
   @socket_url "ws://localhost:4001/socket/websocket"
   describe "connecting to the socket" do
     test "clients can connect" do
-      assert {:ok, _socket} = socket_connect
+      assert {:ok, _socket} = socket_connect()
     end
 
     test "clients can be denied connection" do
@@ -20,13 +20,13 @@ defmodule PhoenixEcho.ChannelsTest do
 
   describe "joining channels" do
     test "successfully joins channel" do
-      {:ok, socket} = socket_connect
+      {:ok, socket} = socket_connect()
       join_topic(socket, @topic, %{})
       assert_joined @topic
     end
 
     test "unauthorized join request" do
-      {:ok, socket} = socket_connect
+      {:ok, socket} = socket_connect()
       join_topic(socket, @topic, %{"authorized" => false})
       assert_receive %Message{
         event: "phx_reply",
@@ -43,7 +43,7 @@ defmodule PhoenixEcho.ChannelsTest do
 
     test "joining an non existed channel" do
       capture_log fn ->
-        {:ok, socket} = socket_connect
+        {:ok, socket} = socket_connect()
         join_topic(socket, "foo:bar")
         assert_receive %Message{
           event: "phx_reply",
@@ -187,7 +187,7 @@ defmodule PhoenixEcho.ChannelsTest do
   end
 
   defp socket_connect(url \\ @socket_url) do
-    WebsocketClient.start_link(self, url)
+    WebsocketClient.start_link(self(), url)
   end
 
   defp join_topic(socket, topic, payload \\ @payload) do
